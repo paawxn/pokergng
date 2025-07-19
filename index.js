@@ -12,12 +12,14 @@ const game = require('./game.js')
 const { Pool } = require('pg');
 
 // Database connection configuration
+require('dotenv').config(); // At the very top of your file
+
 const pool = new Pool({
-  user: 'pokerdev', // The user you created
-  host: 'localhost',
-  database: 'pokerdb', // The database you created
-  password: 'Retard@123', // The password you set
-  port: 5432,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_DATABASE,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT,
 });
 
 // Test the connection
@@ -35,34 +37,46 @@ app.use(express.static('public'));
 io.on('connection', (socket) => {
   console.log(`A player connected with ID: ${socket.id}`);
 
-  // 1. Create a new player object
+  // 1. Create a new player object (using 'status' is more flexible than 'folded')
   const newPlayer = {
     id: socket.id,
-    name: `Player_${socket.id.substring(0, 5)}`, // A simple default name
-    chips: 1000, // Starting chip amount
+    name: `Player_${socket.id.substring(0, 5)}`,
+    chips: 1000,
     cards: [],
     bet: 0,
-    folded: false,
+    status: 'active', // 'active', 'folded', 'all-in'
   };
 
   // 2. Add the new player to the game state
   game.gameState.players.push(newPlayer);
   console.log('Current players:', game.gameState.players.map(p => p.name));
 
-  // 3. Try to start the game
-  game.startGame();
-
-  // 4. Broadcast the updated game state to all players
+  // 3. Broadcast the updated state so everyone sees the new player
   io.emit('gameStateUpdate', game.gameState);
+
+  // --- NEW: Listen for a player's request to start the game ---
+  socket.on('startGame', () => {
+    console.log(`Received startGame request from ${socket.id}`);
+    // The game logic in startGame() already checks for enough players
+    game.startGame(); 
+    // Broadcast the new state after starting
+    io.emit('gameStateUpdate', game.gameState);
+  });
 
   // Handle player disconnection
   socket.on('disconnect', () => {
     console.log(`Player ${socket.id} disconnected`);
-    // Remove the player from the array
     game.gameState.players = game.gameState.players.filter(
       (player) => player.id !== socket.id
     );
-    // Broadcast the new state
+    
+    // What if the dealer disconnects? Or the active player?
+    // You'll need logic here to handle that, e.g., end the hand or advance the turn.
+    // For now, just updating the player list is okay.
+
     io.emit('gameStateUpdate', game.gameState);
   });
+});
+server.listen(PORT, () => {
+  console.log(`Server is running and listening on http://localhost:${PORT}`);
 });

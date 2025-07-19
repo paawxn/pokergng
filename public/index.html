@@ -3,10 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game</title>
+    <title>Poker Night</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Welcome</h1>
-    <p>The game will be built here.</p>
+    <div id="game-table">
+        <div id="table-center">
+            <div id="pot">Pot: $0</div>
+            <div id="community-cards">
+                </div>
+        </div>
+    </div>
+
+    <div id="action-controls">
+        <div id="game-log">Welcome to the game!</div>
+        <button id="foldBtn">Fold</button>
+        <button id="callBtn">Call</button>
+        <div class="raise-container">
+            <button id="raiseBtn">Raise</button>
+            <input type="number" id="raiseAmount" value="20" min="20">
+        </div>
+        <button id="startGameBtn">Start Game</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
 </body>
 </html>
