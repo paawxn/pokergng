@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="retro-bg"></div>
+    <div id="game-settings"></div>
+    <div id="player-management"></div>
     <div id="game-table">
         <div id="table-center">
             <div id="pot">Pot: $0</div>
@@ -14,7 +17,7 @@
                 </div>
         </div>
     </div>
-
+    <div id="session-logs"></div>
     <div id="action-controls">
         <div id="game-log">Welcome to the game!</div>
         <button id="foldBtn">Fold</button>
@@ -25,7 +28,7 @@
         </div>
         <button id="startGameBtn">Start Game</button>
     </div>
-
+    <!-- Poker card assets will be referenced in client.js for rendering -->
     <script src="/socket.io/socket.io.js"></script>
     <script src="client.js"></script>
 </body>

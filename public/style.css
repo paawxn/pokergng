@@ -1,7 +1,7 @@
 body {
-    background-color: #333;
-    color: white;
-    font-family: Arial, sans-serif;
+    background: #181818 url('https://www.transparenttextures.com/patterns/pixel-weave.png');
+    color: #f8f8f8;
+    font-family: 'Press Start 2P', 'VT323', 'Courier New', monospace;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -10,16 +10,27 @@ body {
     margin: 0;
 }
 
+#retro-bg {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: -1;
+    background: repeating-linear-gradient(45deg, #222 0 2px, #333 2px 8px);
+    opacity: 0.7;
+}
+
 #game-table {
-    background-color: #006400; /* Dark green */
-    border: 10px solid #8B4513; /* Wood-like border */
-    border-radius: 150px;
-    width: 80vw;
-    height: 40vw;
+    background: #222 url('https://www.transparenttextures.com/patterns/square-bg.png');
+    border: 8px solid #fbb040;
+    border-radius: 40px;
+    width: 70vw;
+    height: 38vw;
+    min-width: 600px;
+    min-height: 300px;
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
+    box-shadow: 0 0 32px #000a, 0 0 0 8px #333;
 }
 
 #table-center {
@@ -27,79 +38,275 @@ body {
 }
 
 #pot {
-    font-size: 1.5em;
+    font-size: 1.2em;
     font-weight: bold;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
+    color: #ffe066;
+    text-shadow: 1px 1px 0 #000, 2px 2px 0 #fbb040;
 }
 
 #community-cards {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     min-height: 90px;
 }
 
 .player-area {
     position: absolute;
     text-align: center;
-    background-color: rgba(0, 0, 0, 0.3);
-    padding: 10px;
-    border-radius: 8px;
-    width: 150px;
-    transition: all 0.3s ease; /* For smooth updates */
+    background: #181818cc;
+    border: 2px solid #fbb040;
+    box-shadow: 0 0 8px #000a;
+    padding: 6px 8px 4px 8px;
+    border-radius: 12px;
+    width: 120px;
+    min-height: 90px;
+    font-size: 0.85em;
+    font-family: 'Press Start 2P', 'VT323', monospace;
+    color: #fff;
+    transition: all 0.3s cubic-bezier(.4,2,.6,1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 2;
+}
+.player-seat-top {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 1em;
+    margin-bottom: 2px;
+}
+.player-name {
+    font-weight: bold;
+    color: #ffe066;
+    text-shadow: 1px 1px 0 #000;
+    font-size: 1em;
+}
+.player-chips {
+    color: #fff;
+    font-size: 0.95em;
+    margin-left: 6px;
+}
+.player-seat-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    font-size: 0.9em;
+    margin-top: 2px;
+}
+.player-bet {
+    color: #fbb040;
+    font-size: 0.9em;
+    margin-right: 4px;
+}
+.player-profit {
+    color: #7fff7f;
+    font-size: 0.9em;
+    margin-left: 4px;
+}
+.win-pct {
+    color: #66c2ff;
+    font-size: 0.9em;
+    margin-left: 4px;
+    font-family: 'Press Start 2P', 'VT323', monospace;
 }
 
 .player-cards {
     display: flex;
     justify-content: center;
-    gap: 5px;
-    margin: 5px 0;
-    min-height: 70px;
+    gap: 3px;
+    margin: 4px 0;
+    min-height: 60px;
 }
 
 .card {
-    background-color: white;
-    color: black;
-    width: 50px;
-    height: 70px;
-    border-radius: 5px;
-    border: 1px solid #333;
+    width: 48px;
+    height: 64px;
+    background: #fff;
+    border: 2px solid #222;
+    border-radius: 4px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.2em;
-    font-weight: bold;
+    font-size: 1.1em;
+    font-family: 'Press Start 2P', 'VT323', monospace;
+    color: #222;
+    box-shadow: 0 0 4px #000a;
+    image-rendering: pixelated;
+    background-size: cover;
+    background-position: center;
 }
 
 .active-player {
-    box-shadow: 0 0 15px yellow;
-    transform: scale(1.1);
+    box-shadow: 0 0 16px #ffe066, 0 0 0 4px #fbb040;
+    transform: scale(1.08);
 }
 
 #action-controls {
-    margin-top: 30px;
+    margin-top: 24px;
     display: flex;
     align-items: center;
-    gap: 15px;
-    background-color: #222;
-    padding: 15px;
-    border-radius: 10px;
+    gap: 12px;
+    background: #181818ee;
+    padding: 12px;
+    border-radius: 8px;
+    border: 2px solid #fbb040;
+    box-shadow: 0 0 8px #000a;
 }
 
 #action-controls button {
-    padding: 10px 20px;
+    padding: 8px 16px;
     font-size: 1em;
-    border-radius: 5px;
-    border: none;
+    border-radius: 4px;
+    border: 2px solid #fbb040;
+    background: #222;
+    color: #ffe066;
+    font-family: 'Press Start 2P', 'VT323', monospace;
     cursor: pointer;
+    box-shadow: 0 0 4px #000a;
+    transition: background 0.2s, color 0.2s;
+}
+
+#action-controls button:hover {
+    background: #ffe066;
+    color: #222;
 }
 
 #action-controls input {
     width: 60px;
-    padding: 10px;
+    padding: 8px;
     font-size: 1em;
+    border-radius: 4px;
+    border: 2px solid #fbb040;
+    font-family: 'Press Start 2P', 'VT323', monospace;
 }
 
 .raise-container {
     display: flex;
     align-items: center;
+}
+
+#game-settings, #player-management, #session-logs {
+    margin: 12px 0;
+    background: #222;
+    border: 2px solid #fbb040;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-family: 'Press Start 2P', 'VT323', monospace;
+    color: #ffe066;
+    box-shadow: 0 0 8px #000a;
+    min-width: 320px;
+}
+
+#session-logs {
+    max-height: 180px;
+    overflow-y: auto;
+    font-size: 0.8em;
+}
+
+#phase-info {
+    font-size: 1em;
+    color: #ffe066;
+    background: #181818cc;
+    border: 2px solid #fbb040;
+    border-radius: 6px;
+    padding: 4px 10px;
+    margin-bottom: 8px;
+    font-family: 'Press Start 2P', 'VT323', monospace;
+    box-shadow: 0 0 4px #000a;
+}
+
+.betting-controls {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #232323;
+    border: 2px solid #fbb040;
+    border-radius: 8px;
+    padding: 10px 18px;
+    margin-top: 8px;
+    box-shadow: 0 0 8px #000a;
+}
+.current-bet {
+    color: #ffe066;
+    font-size: 1em;
+    margin-left: 10px;
+    font-family: 'Press Start 2P', 'VT323', monospace;
+    text-shadow: 1px 1px 0 #000;
+}
+.settings-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+}
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1em;
+    color: #ffe066;
+    background: #232323;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-family: 'Press Start 2P', 'VT323', monospace;
+}
+.toggle-label input[type="checkbox"] {
+    accent-color: #fbb040;
+    width: 18px;
+    height: 18px;
+}
+.advance-btn {
+    margin-top: 8px;
+    padding: 8px 18px;
+    font-size: 1em;
+    border-radius: 4px;
+    border: 2px solid #fbb040;
+    background: #ffe066;
+    color: #222;
+    font-family: 'Press Start 2P', 'VT323', monospace;
+    cursor: pointer;
+    box-shadow: 0 0 4px #000a;
+    transition: background 0.2s, color 0.2s;
+}
+.advance-btn:hover {
+    background: #fbb040;
+    color: #fff;
+}
+.seat-join-btn {
+    width: 80px;
+    height: 36px;
+    border-radius: 18px;
+    background: #232323;
+    color: #ffe066;
+    border: 2px solid #fbb040;
+    font-family: 'Press Start 2P', 'VT323', monospace;
+    font-size: 1em;
+    font-weight: bold;
+    box-shadow: 0 0 6px #000a;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    z-index: 2;
+}
+.seat-join-btn:hover {
+    background: #ffe066;
+    color: #232323;
+}
+#play-vs-bot-btn {
+    width: 140px;
+    height: 40px;
+    font-size: 1.1em;
+    margin-top: 12px;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+@media (max-width: 900px) {
+    #game-table { min-width: 320px; min-height: 180px; width: 98vw; height: 60vw; }
+    .player-area { width: 80px; min-height: 60px; font-size: 0.7em; }
+    .card { width: 32px; height: 44px; }
+    .seat-join-btn { width: 48px; height: 24px; font-size: 0.7em; }
+    #play-vs-bot-btn { width: 80px; height: 28px; font-size: 0.8em; }
 }

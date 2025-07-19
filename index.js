@@ -8,8 +8,9 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const PORT = 3000;
-const game = require('./game.js')
+const game = require('./game.js');
 const { Pool } = require('pg');
+const { v4: uuidv4 } = require('uuid');
 
 // Database connection configuration
 require('dotenv').config(); // At the very top of your file
@@ -34,47 +35,138 @@ pool.query('SELECT NOW()', (err, res) => {
 // Serve all files from the 'public' directory
 app.use(express.static('public'));
 
+// Endpoint to create a new session and redirect to its URL
+app.get('/create-session', (req, res) => {
+  const sessionId = uuidv4();
+  game.createSession(sessionId);
+  res.redirect(`/session/${sessionId}`);
+});
+
+// Serve session page
+app.get('/session/:sessionId', (req, res) => {
+  res.sendFile(__dirname + '/public/index.html');
+});
+
+function emitGameState(sessionId) {
+  const session = game.getSession(sessionId);
+  if (!session) return;
+  const winPercentages = game.getWinPercentages(session);
+  io.to(sessionId).emit('gameStateUpdate', {
+    ...session,
+    winPercentages,
+    logs: session.logs || [],
+    settings: session.settings || {},
+  });
+}
+
 io.on('connection', (socket) => {
-  console.log(`A player connected with ID: ${socket.id}`);
+  let sessionId;
+  let player;
 
-  // 1. Create a new player object (using 'status' is more flexible than 'folded')
-  const newPlayer = {
-    id: socket.id,
-    name: `Player_${socket.id.substring(0, 5)}`,
-    chips: 1000,
-    cards: [],
-    bet: 0,
-    status: 'active', // 'active', 'folded', 'all-in'
-  };
-
-  // 2. Add the new player to the game state
-  game.gameState.players.push(newPlayer);
-  console.log('Current players:', game.gameState.players.map(p => p.name));
-
-  // 3. Broadcast the updated state so everyone sees the new player
-  io.emit('gameStateUpdate', game.gameState);
-
-  // --- NEW: Listen for a player's request to start the game ---
-  socket.on('startGame', () => {
-    console.log(`Received startGame request from ${socket.id}`);
-    // The game logic in startGame() already checks for enough players
-    game.startGame(); 
-    // Broadcast the new state after starting
-    io.emit('gameStateUpdate', game.gameState);
+  // Listen for joinSession event
+  socket.on('joinSession', ({ sessionId: sid, stackRequest, name }) => {
+    sessionId = sid;
+    const session = game.getSession(sessionId) || game.createSession(sessionId);
+    player = {
+      id: socket.id,
+      name: name || `Player_${socket.id.substring(0, 5)}`,
+      chips: stackRequest || 1000,
+      cards: [],
+      bet: 0,
+      status: 'pending', // pending approval
+    };
+    session.players.push(player);
+    socket.join(sessionId);
+    emitGameState(sessionId);
   });
 
-  // Handle player disconnection
-  socket.on('disconnect', () => {
-    console.log(`Player ${socket.id} disconnected`);
-    game.gameState.players = game.gameState.players.filter(
-      (player) => player.id !== socket.id
-    );
-    
-    // What if the dealer disconnects? Or the active player?
-    // You'll need logic here to handle that, e.g., end the hand or advance the turn.
-    // For now, just updating the player list is okay.
+  // Listen for admin approval
+  socket.on('approvePlayer', ({ sessionId: sid, playerId, approved }) => {
+    const session = game.getSession(sid);
+    if (!session) return;
+    const p = session.players.find(pl => pl.id === playerId);
+    if (p) {
+      p.status = approved ? 'active' : 'rejected';
+      emitGameState(sid);
+    }
+  });
 
-    io.emit('gameStateUpdate', game.gameState);
+  // Listen for startGame event
+  socket.on('startGame', ({ sessionId: sid }) => {
+    const session = game.getSession(sid);
+    if (session) {
+      game.startGame(session);
+      emitGameState(sid);
+    }
+  });
+
+  // Listen for player actions (fold, call, raise)
+  socket.on('playerAction', ({ action, amount }) => {
+    if (!sessionId) return;
+    const session = game.getSession(sessionId);
+    if (!session) return;
+    game.playerAction(session, socket.id, action, amount);
+    // If next player is a bot, auto-act
+    const active = session.players[session.activePlayerPosition];
+    if (active && active.isBot && session.phase !== 'waiting') {
+      setTimeout(() => {
+        // Bot always checks/calls
+        if (session.currentBet > active.bet) {
+          game.playerAction(session, active.id, 'call');
+        } else {
+          game.playerAction(session, active.id, 'call');
+        }
+        emitGameState(sessionId);
+      }, 800);
+    }
+    emitGameState(sessionId);
+  });
+
+  // Handle adminAction socket events for adjustStack, kickPlayer, and advanceStreet. Update session state and broadcast changes. (Settings toggles will be handled in a future step.)
+  socket.on('adminAction', ({ action, playerId, delta, sessionId: sid, setting, value }) => {
+    const session = game.getSession(sid);
+    if (!session) return;
+    // Only allow host (first player) to perform admin actions
+    if (!session.players.length || session.players[0].id !== socket.id) return;
+    if (action === 'adjustStack') {
+      const p = session.players.find(pl => pl.id === playerId);
+      if (p) {
+        p.chips += delta;
+        if (!p.initialChips) p.initialChips = p.chips;
+      }
+    } else if (action === 'kickPlayer') {
+      session.players = session.players.filter(pl => pl.id !== playerId);
+    } else if (action === 'advanceStreet') {
+      game.nextPhase(session);
+    } else if (action === 'toggleSetting') {
+      session.settings = session.settings || {};
+      session.settings[setting] = value;
+    } else if (action === 'addBot') {
+      // Add a bot player to the first empty seat
+      if (!session.players) session.players = [];
+      if (session.players.length < 9) {
+        const botIdx = session.players.length;
+        session.players[botIdx] = {
+          id: 'bot_' + Math.random().toString(36).slice(2, 8),
+          name: 'Bot',
+          chips: 1000,
+          cards: [],
+          bet: 0,
+          status: 'active',
+          isBot: true,
+        };
+      }
+    }
+    emitGameState(sid);
+  });
+
+  // Handle disconnect
+  socket.on('disconnect', () => {
+    if (!sessionId) return;
+    const session = game.getSession(sessionId);
+    if (!session) return;
+    session.players = session.players.filter(p => p.id !== socket.id);
+    emitGameState(sessionId);
   });
 });
 server.listen(PORT, () => {
